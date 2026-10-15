@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "roi-reviewer"
+version = "0.1.0"
+description = "Interactive ROI quality-control reviewer for two-photon calcium imaging sessions"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "h5py",
+    "matplotlib",
+    "pillow",
+    "pyyaml",
+]
+
+[project.scripts]
+roi-reviewer = "roi_reviewer.summary:main"
+
+[tool.setuptools]
+packages = ["roi_reviewer"]

@@ -43,7 +43,7 @@ def resolve(path_value: str) -> Path:
 
 
 def build_command(cfg: dict, session: Path, output_dir: Path) -> list[str]:
-    cmd = [sys.executable, "-m", "utils_2p.processing_summary", str(session),
+    cmd = [sys.executable, "-m", "roi_reviewer.summary", str(session),
            "--output-dir", str(output_dir)]
     if cfg.get("input_layout", "auto") != "auto":
         cmd += ["--input-layout", cfg["input_layout"]]

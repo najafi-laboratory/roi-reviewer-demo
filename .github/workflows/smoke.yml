@@ -3,33 +3,75 @@ name: smoke
 on: [push, pull_request]
 
 jobs:
-  inputs:
+  standalone:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - run: pip install numpy scipy pyyaml
-      - name: Build a synthetic session and check it against the input contract
+      - name: Install the package and its dependencies
+        run: pip install -e .
+
+      - name: The generator must not depend on any laboratory package
+        run: |
+          python - <<'PY'
+          import sys, importlib.abc
+
+          class Block(importlib.abc.MetaPathFinder):
+              def find_spec(self, fullname, path=None, target=None):
+                  if fullname == "utils_2p" or fullname.startswith("utils_2p."):
+                      raise ImportError("utils_2p must not be imported")
+                  return None
+
+          sys.meta_path.insert(0, Block())
+          import roi_reviewer.summary  # noqa: F401
+          print("roi_reviewer imports with utils_2p blocked")
+          PY
+
+      - name: Build a synthetic session, convert it, and check the contract
         run: |
           python - <<'PY'
           import numpy as np, pathlib
           out = pathlib.Path("build/synthetic"); out.mkdir(parents=True, exist_ok=True)
+          rng = np.random.default_rng(0)
           mask = np.zeros((128, 128), dtype=np.int32)
           mask[10:20, 20:35] = 1
           mask[60:72, 70:82] = 2
-          traces = np.random.rand(600, 2).astype("float32")   # frames x ROIs, deliberately transposed
           np.save(out / "cell_masks.npy", mask)
-          np.save(out / "traces.npy", traces)
-          np.save(out / "mean_image.npy", np.random.rand(128, 128).astype("float32"))
+          np.save(out / "traces.npy", rng.random((600, 2), dtype=np.float32))   # frames x ROIs, deliberately transposed
+          np.save(out / "spikes.npy", np.abs(rng.normal(size=(2, 600))).astype("float32"))
+          np.save(out / "mean_image.npy", rng.random((128, 128), dtype=np.float32))
           PY
           python scripts/make_standard_inputs.py \
             --masks build/synthetic/cell_masks.npy \
             --traces build/synthetic/traces.npy \
+            --spikes build/synthetic/spikes.npy \
             --fov build/synthetic/mean_image.npy \
             --out build/session
           python scripts/validate_inputs.py build/session
+
+      - name: A .npy where the reviewer expects HDF5 must be reported, not ignored
+        run: |
+          cp -r build/session build/stray
+          rm build/stray/spikes.h5
+          python -c "import numpy as np; np.save('build/stray/spikes.npy', np.zeros((2,600),dtype='float32'))"
+          if python scripts/validate_inputs.py build/stray; then
+            echo "validator failed to flag a stray spikes.npy"; exit 1
+          fi
+
+      - name: Generate a reviewer end to end
+        run: |
+          python -m roi_reviewer.summary build/session --output-dir build/out --roi-index-label "Original Index"
+          test -f build/out/*_interactive_fov_roi_dff.html || (echo "no reviewer written"; exit 1)
+          python - <<'PY'
+          import glob, pathlib
+          html = pathlib.Path(glob.glob("build/out/*_interactive_fov_roi_dff.html")[0]).read_text(errors="replace")
+          for probe in ('"nRois":2', "Original Index", "referenceText"):
+              assert probe in html, f"missing {probe!r} in generated reviewer"
+          print("reviewer contains the expected payload")
+          PY
+
       - name: Every config resolves
         run: |
           for cfg in config/*.yaml config/demo/*.yaml; do

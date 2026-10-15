@@ -24,6 +24,7 @@ import argparse
 import json
 from pathlib import Path
 
+import h5py
 import numpy as np
 
 
@@ -123,15 +124,18 @@ def main() -> int:
         np.save(args.out / "Fneu.npy", np.zeros_like(traces))
         print("  neuropil: not supplied, written as zeros")
 
-    for src, name, label in ((args.dff, "dff.npy", "dF/F"),
-                             (args.spikes, "spikes.npy", "inferred spikes")):
+    # The reviewer reads these two arrays from HDF5, not .npy: dff.h5 dataset "dff"
+    # and spikes.h5 dataset "spikes". A .npy of either name is silently ignored.
+    for src, filename, dataset, label in ((args.dff, "dff.h5", "dff", "dF/F"),
+                                          (args.spikes, "spikes.h5", "spikes", "inferred spikes")):
         if src is None:
             continue
         arr = as_trace_matrix(load_any(src), n_rois, label)
         if arr.shape[1] != n_frames:
             raise SystemExit(f"{label} has {arr.shape[1]} frames but traces have {n_frames}")
-        np.save(args.out / name, arr)
-        print(f"  {label}: {arr.shape[0]} x {arr.shape[1]} float32")
+        with h5py.File(args.out / filename, "w") as handle:
+            handle.create_dataset(dataset, data=np.ascontiguousarray(arr, dtype=np.float32))
+        print(f"  {label}: {arr.shape[0]} x {arr.shape[1]} float32 -> {filename}:{dataset}")
 
     if args.fov is not None:
         fov = load_any(args.fov)

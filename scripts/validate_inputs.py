@@ -72,8 +72,15 @@ def _first_present(root: Path, names: list[str]) -> Path | None:
     return None
 
 
+class ArrayUnreadable(Exception):
+    pass
+
+
 def _load_array(path: Path) -> np.ndarray:
-    return np.load(path, mmap_mode="r", allow_pickle=path.name == "stat.npy")
+    try:
+        return np.load(path, mmap_mode="r", allow_pickle=path.name == "stat.npy")
+    except Exception as exc:  # unreadable, truncated, or not a .npy at all
+        raise ArrayUnreadable(f"{path.name} could not be read as a NumPy array: {exc}") from exc
 
 
 def _check_trace_array(path: Path, label: str, rep: Report) -> np.ndarray | None:
@@ -228,6 +235,31 @@ def validate(root: Path) -> Report:
             "and imaging share a coordinate frame."
         )
 
+    for filename, dataset, label in (("dff.h5", "dff", "dF/F"), ("spikes.h5", "spikes", "inferred spikes")):
+        path = root / filename
+        stray = [p for p in (root / (filename[:-3] + ".npy"), root / "spks.npy") if p.exists()]
+        if path.exists():
+            try:
+                import h5py
+
+                with h5py.File(path, "r") as handle:
+                    if dataset not in handle:
+                        rep.error(filename + " has no " + dataset + " dataset, so the reviewer will ignore it")
+                    else:
+                        shape = handle[dataset].shape
+                        rep.fact(filename + " carries " + dataset + " of shape " + str(shape))
+                        if n_rois_geometry is not None and shape[0] != n_rois_geometry:
+                            rep.error(filename + " has " + str(shape[0]) + " rows but the masks define "
+                                      + str(n_rois_geometry) + " ROIs")
+            except ImportError:
+                rep.fact("h5py not installed, so " + filename + " was not inspected")
+        elif stray:
+            rep.error("found " + ", ".join(p.name for p in stray) + " but no " + filename
+                      + ". The reviewer reads " + label + " only from " + filename + " (dataset "
+                      + dataset + ") and will silently ignore a .npy. Convert with"
+                      + " scripts/make_standard_inputs.py")
+        elif label == "inferred spikes":
+            rep.fact("no inferred spikes supplied; spike metrics and overlays will be unavailable")
     if n_rois_geometry is not None and arr_raw is not None:
         rep.fact(
             "row order between geometry and traces cannot be verified mechanically; "
@@ -240,7 +272,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("session", type=Path, help="directory of standard-format inputs")
     args = parser.parse_args()
-    report = validate(args.session)
+    try:
+        report = validate(args.session)
+    except ArrayUnreadable as exc:
+        print(f"{args.session}\n  ERROR {exc}")
+        return 1
     print(f"{args.session}")
     print(report.render())
     return 1 if report.errors else 0
