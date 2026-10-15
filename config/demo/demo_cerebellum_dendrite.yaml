@@ -1,0 +1,12 @@
+# DEMO CONFIG -- Najafi laboratory cerebellar dendrite session.
+# Lab-specific. Delete config/demo/ for a clean start.
+name: demo_cerebellum_dendrite
+session_path: data/demo/cerebellum_dendrite
+input_layout: suite2p          # explicit: this session also contains a deprecated qc_results/
+output_dir: outputs/demo_cerebellum_dendrite
+roi_index_label: "Original Index"
+target_structure: dendrite
+initialize_labels_from_model_scores: false
+notes: >
+  Dendrite-targeted cerebellar recording, 36,517 frames at 30 Hz. Demonstrates
+  the Suite2p input path and the dendrite morphology preset.

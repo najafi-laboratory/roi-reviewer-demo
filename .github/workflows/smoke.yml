@@ -1,0 +1,37 @@
+name: smoke
+
+on: [push, pull_request]
+
+jobs:
+  inputs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install numpy scipy pyyaml
+      - name: Build a synthetic session and check it against the input contract
+        run: |
+          python - <<'PY'
+          import numpy as np, pathlib
+          out = pathlib.Path("build/synthetic"); out.mkdir(parents=True, exist_ok=True)
+          mask = np.zeros((128, 128), dtype=np.int32)
+          mask[10:20, 20:35] = 1
+          mask[60:72, 70:82] = 2
+          traces = np.random.rand(600, 2).astype("float32")   # frames x ROIs, deliberately transposed
+          np.save(out / "cell_masks.npy", mask)
+          np.save(out / "traces.npy", traces)
+          np.save(out / "mean_image.npy", np.random.rand(128, 128).astype("float32"))
+          PY
+          python scripts/make_standard_inputs.py \
+            --masks build/synthetic/cell_masks.npy \
+            --traces build/synthetic/traces.npy \
+            --fov build/synthetic/mean_image.npy \
+            --out build/session
+          python scripts/validate_inputs.py build/session
+      - name: Every config resolves
+        run: |
+          for cfg in config/*.yaml config/demo/*.yaml; do
+            python scripts/build_reviewer.py "$cfg" --dry-run
+          done

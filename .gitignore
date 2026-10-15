@@ -1,0 +1,8 @@
+outputs/
+data/demo/
+data/*/
+!data/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store
+*.html

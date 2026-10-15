@@ -1,0 +1,12 @@
+# DEMO CONFIG -- Najafi laboratory posterior parietal cortex session.
+# Lab-specific. Delete config/demo/ for a clean start.
+name: demo_ppc_multi_indicator
+session_path: data/demo/ppc_multi_indicator
+input_layout: suite2p
+output_dir: outputs/demo_ppc_multi_indicator
+roi_index_label: "Original Index"
+target_structure: soma
+initialize_labels_from_model_scores: false
+notes: >
+  Multiple-indicator PPC recording with excitatory/inhibitory cell-type labels.
+  Demonstrates the anatomical second channel and the cell-type label input.

@@ -1,0 +1,46 @@
+# ---------------------------------------------------------------------------
+# Reviewer build configuration. Copy this file, edit the paths, and run:
+#     python scripts/build_reviewer.py config/my_session.yaml
+# Every field below is documented; delete the comments once you know them.
+# ---------------------------------------------------------------------------
+
+# Name used for output filenames and in the run log. Free text.
+name: my_session
+
+# Directory the generator reads. This may be a session root containing
+# suite2p/plane0/, the plane directory itself, or a directory of standard-format
+# inputs (see scripts/validate_inputs.py for what "standard format" means).
+session_path: /path/to/processed/session
+
+# auto | suite2p | external_rois | qc_results | manual_qc_results
+#   auto          let the generator infer the layout and print what it chose
+#   suite2p       suite2p/plane0/{ops,stat,F,Fneu}.npy
+#   external_rois a mask or sparse component file plus matching traces
+# qc_results and manual_qc_results are deprecated pre-filtered layouts; select
+# them explicitly rather than relying on auto-detection, because a session that
+# contains both will silently resolve to the pre-filtered ROI set.
+input_layout: auto
+
+# Where the reviewer HTML and summary PDF are written.
+output_dir: outputs/my_session
+
+# ---------------------------------------------------------------------------
+# Reviewer options (all optional)
+# ---------------------------------------------------------------------------
+
+# Label shown for each ROI's original index. Use "Original Index" when the ROIs
+# did not come from Suite2p.
+roi_index_label: "Original Index"
+
+# soma | dendrite | null  -- selects which built-in morphology preset the
+# reviewer offers. Leave null if neither preset suits your preparation; preset
+# windows were calibrated on Suite2p morphology values and do not transfer to
+# recomputed external-mask metrics.
+target_structure: null
+
+# Open with every ROI unlabeled (recommended) or pre-labeled from a stored
+# classifier score file, when one is present.
+initialize_labels_from_model_scores: false
+
+# Free text copied into the run log beside the resolved paths.
+notes: ""
