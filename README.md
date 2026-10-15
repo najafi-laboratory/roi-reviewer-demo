@@ -85,7 +85,7 @@ spot-check one known-active ROI before trusting a session.
 | Config | Demonstrates |
 |---|---|
 | `config/demo/demo_cerebellum_dendrite.yaml` | Suite2p input path; dendrite morphology preset |
-| `config/demo/demo_ppc_multi_indicator.yaml` | anatomical second channel; excitatory/inhibitory cell-type labels |
+| `config/demo/demo_ppc_multi_indicator.yaml` | anatomical second channel; excitatory/inhibitory cell-type labels; sidecar array storage |
 
 The recordings are published separately; `scripts/fetch_demo_data.py` downloads
 them into `data/demo/` once the archive record is set at the top of that script.
@@ -101,6 +101,7 @@ scripts/
   make_standard_inputs.py    arbitrary segmentation output -> documented layout
   validate_inputs.py         checks a directory against the contract
   fetch_demo_data.py         demo datasets from the public archive
+  demo_assemble_ppc_session.sh   builds the PPC session from laboratory storage
 data/                        inputs (git-ignored)
 outputs/                     generated reviewers (git-ignored)
 ```
