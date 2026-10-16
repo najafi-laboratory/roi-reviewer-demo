@@ -22,10 +22,9 @@ Suite2p. Use it to
 * check a converted directory before building, so a silent mismatch is caught early;
 * read a complete example of each supported input path.
 
-!!! note "Standalone by design"
-    The generator is vendored into `roi_reviewer/`, so nothing from the laboratory's
-    `2p_imaging` package is installed or imported. See [Vendored
-    Generator](vendoring.md) for the provenance and the re-sync procedure.
+!!! note "Self-contained"
+    `pip install -e .` installs everything the generator needs. No laboratory
+    package or cluster environment is required.
 
 ## How it fits together
 

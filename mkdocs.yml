@@ -29,4 +29,3 @@ nav:
       - Interface Tour: interface.md
   - Reference:
       - Demo Sessions: demo-sessions.md
-      - Vendored Generator: vendoring.md
