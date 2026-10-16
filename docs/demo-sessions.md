@@ -21,6 +21,27 @@ target_structure: soma
     `config/demo/` and `scripts/demo_assemble_ppc_session.sh` are laboratory-specific.
     Delete both for a clean start; nothing else in the repository depends on them.
 
+## Try them without installing anything
+
+Both demo reviewers are archived with their trace arrays, so you can explore the
+interface before building anything yourself.
+
+| Session | What it shows | Record |
+|:---|:---|:---|
+| Posterior parietal cortex, 225 ROIs | Two channels, excitatory/inhibitory cell-type labels; the session in every screenshot on this site | [https://sandbox.zenodo.org/records/620871](https://sandbox.zenodo.org/records/620871) |
+| Cerebellar dendrite, 2,702 ROIs | Classifier scores; set **ROI model score probability min** to 0.8 and press **Apply Filters** to keep 279 | [https://sandbox.zenodo.org/records/620873](https://sandbox.zenodo.org/records/620873) |
+
+1. Download the three files from a record into one folder.
+2. Open the `.html` file in a browser.
+3. Click **Load dF/F file** and choose the `_dff.npy` file, then **Load inferred spikes
+   file** and choose the `_oasis_spikes.npy` file. Or run `python -m http.server` in the
+   folder and open the page through `http://localhost:8000/`, which loads both
+   automatically.
+
+!!! note "Sandbox records"
+    These are test records on the Zenodo sandbox. They will move to zenodo.org, with
+    permanent DOIs, when the accompanying paper is published.
+
 ## Getting the data
 
 The recordings are published separately from the code. `scripts/fetch_demo_data.py`

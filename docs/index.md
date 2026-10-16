@@ -50,6 +50,9 @@ together.
 
 ## Where to start
 
+* [Demo Sessions](demo-sessions.md#try-them-without-installing-anything) links two
+  example reviewers you can download and open in a browser right away.
+
 * [Quickstart](quickstart.md) installs the package and builds a reviewer.
 * [Preparing Your Inputs](inputs.md) is the input contract, including the one
   correspondence no tool can check for you.
