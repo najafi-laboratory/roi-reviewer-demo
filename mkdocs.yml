@@ -1,0 +1,28 @@
+site_name: roi-reviewer-demo
+site_description: Build a self-contained ROI quality-control reviewer from any segmentation output
+site_url: !ENV [SITE_URL, '']
+repo_url: https://github.com/najafi-laboratory/roi-reviewer-demo
+repo_name: najafi-laboratory/roi-reviewer-demo
+
+theme:
+  name: readthedocs
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+
+extra_css:
+  - stylesheets/extra.css
+
+nav:
+  - Overview: index.md
+  - Getting Started:
+      - Quickstart: quickstart.md
+      - Preparing Your Inputs: inputs.md
+      - Build Configuration: configuration.md
+  - The Reviewer:
+      - Interface Tour: interface.md
+  - Reference:
+      - Demo Sessions: demo-sessions.md
+      - Vendored Generator: vendoring.md

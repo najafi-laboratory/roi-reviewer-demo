@@ -12,6 +12,18 @@ segmentation output into the documented input layout, a validator that catches
 the mistakes that otherwise surface as a silently wrong reviewer, and a build
 script that records how each output was produced.
 
+## Documentation
+
+The full documentation is in `docs/` and is published as a site at
+<https://najafi-laboratory.github.io/roi-reviewer-demo/>: a quickstart, the
+input contract, every configuration field, a tour of the reviewer interface,
+the demo sessions, and the vendoring arrangement. To read it locally:
+
+```bash
+pip install -r requirements-docs.txt
+mkdocs serve
+```
+
 ## Installation
 
 ```bash

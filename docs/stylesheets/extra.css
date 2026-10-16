@@ -1,0 +1,25 @@
+/* Widen the main Read the Docs content area and keep the page background white,
+   matching the 2p_imaging documentation site. */
+.wy-nav-content {
+  max-width: 1100px;
+}
+
+.wy-nav-content-wrap {
+  background: #fff;
+}
+
+/* Interface screenshots are wide; let them use the full column and show a
+   border so panel edges are distinguishable from the page. */
+.screenshot img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid #e1e4e5;
+}
+
+/* The full-interface figure is tall; cap it so the page stays navigable. */
+.screenshot-tall img {
+  max-height: 900px;
+  width: auto;
+  margin: 0 auto;
+}
