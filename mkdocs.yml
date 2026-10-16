@@ -8,6 +8,9 @@ theme:
   name: readthedocs
 
 markdown_extensions:
+  # md_in_html is required: every screenshot sits inside <div class="screenshot" markdown>
+  # for styling, and without this extension the image syntax inside is left unrendered.
+  - md_in_html
   - admonition
   - toc:
       permalink: true

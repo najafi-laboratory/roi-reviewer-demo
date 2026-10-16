@@ -37,6 +37,27 @@ jobs:
           SITE_URL: https://najafi-laboratory.github.io/roi-reviewer-demo/
         run: mkdocs build --strict
 
+      # mkdocs --strict does not notice an image that was never rendered (for example
+      # markdown inside an HTML block without md_in_html), so count them explicitly.
+      - name: Every image in the docs is rendered and resolves
+        run: |
+          python - <<'PY'
+          import glob, pathlib, re, sys
+          failures = []
+          for md in sorted(glob.glob("docs/*.md")):
+              expected = len(re.findall(r"!\[[^\]]*\]\([^)]+\)", pathlib.Path(md).read_text()))
+              stem = pathlib.Path(md).stem
+              html = pathlib.Path("site/index.html" if stem == "index" else f"site/{stem}/index.html")
+              text = html.read_text()
+              srcs = re.findall(r'<img[^>]+src="([^"]+)"', text)
+              missing = [s for s in srcs if not (html.parent / s).resolve().exists()]
+              if len(srcs) != expected or missing or re.search(r"!\[[^\]]*\]\(", text):
+                  failures.append(f"{stem}: expected {expected}, rendered {len(srcs)}, unresolved {missing}")
+          if failures:
+              sys.exit("\n".join(failures))
+          print("all images rendered")
+          PY
+
       - name: Set up GitHub Pages
         uses: actions/configure-pages@v6
 
