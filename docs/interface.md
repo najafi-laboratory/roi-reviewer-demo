@@ -45,8 +45,11 @@ a calcium event is one where the inference has latched onto something else.
 </div>
 
 No thresholds are active by default and every ROI passes. Editing a field immediately
-updates the pass/fail count and the visible ROI set; labels change only when
-`Apply Filters` is clicked. Filters compose conjunctively, and the metric spreadsheet
+updates the pass/fail count and the distribution previews. The field of view, the
+set of ROIs that arrow keys step through, and the labels change when
+`Apply Filters` is clicked, which marks passing ROIs not labeled and failing ROIs Bad.
+After manual labeling, refresh the view with a sort rather than pressing
+`Apply Filters` again, which would reset every label. Filters compose conjunctively, and the metric spreadsheet
 export records which thresholds each ROI failed.
 
 Beside each numeric field the menu reports a reference statistic computed from the ROIs
