@@ -57,15 +57,13 @@ the pixel belongs to no ROI. It is the format most segmentation tools can export
 directly: Cellpose's `masks` output, a scikit-image `label()` result, or an ImageJ ROI
 set rasterized to one label image are all already in this form.
 
-```
-        x →
-   y   0 0 0 0 0 0 0 0
-   ↓   0 1 1 0 0 0 0 0      label 1: four pixels  -> ROI row 0
-       0 1 1 0 0 2 2 0      label 2: six pixels   -> ROI row 1
-       0 0 0 0 2 2 2 0      label 3: three pixels -> ROI row 2
-       0 3 3 3 0 2 0 0
-       0 0 0 0 0 0 0 0
-```
+<div class="screenshot" markdown>
+![A dense label mask with labels 3, 7 and 12. Each pixel holds its ROI's label and 0 is background. The positive labels are sorted ascending, so 3, 7 and 12 become rows 0, 1 and 2, and row i of the trace files belongs to ROI i. The traces are illustrative.](img/label-mask-diagram.png)
+</div>
+
+The example uses labels 3, 7 and 12 to show the general case. Label 7 sits
+highest in the image, but label 3 is smallest, so label 3 becomes row 0: rows follow
+label value, not position, and the gaps between labels are skipped.
 
 **File and shape.** Saved as `roi_mask.npy` (also found as `roi_masks.npy`,
 `label_mask.npy` or `masks.npy`) in the input directory. The array is indexed
