@@ -11,7 +11,7 @@ of cell it is. Anything that can express those can be reviewed.
 
 | File | Meaning |
 |---|---|
-| `roi_mask.npy` | dense 2-D integer label image; 0 is background, label *k* is ROI row *k−1* |
+| `roi_mask.npy` | dense 2-D integer label image, one integer per pixel naming the ROI it belongs to; see [Dense label masks](#dense-label-masks) |
 | `spatial_components.npz` | alternative to the above: sparse `(pixels, n_rois)` component matrix |
 | `F.npy`, `Fneu.npy` | raw fluorescence and neuropil, `(n_rois, n_frames)` float32, C-ordered |
 | `dff.h5` (dataset `dff`) | optional precomputed dF/F, `(n_rois, n_frames)` float32 |
@@ -48,6 +48,81 @@ If `dff.h5` is absent the generator computes dF/F from `F.npy` and `Fneu.npy`.
 Inferred spikes have no such fallback: without `spikes.h5`, the spike overlay and
 every inferred-spike metric are unavailable, and the reviewer says so rather than
 showing an empty panel.
+
+## Dense label masks
+
+A dense label mask is a single 2-D integer array with the same height and width as
+the field of view. Each pixel holds the number of the ROI it belongs to, and `0` means
+the pixel belongs to no ROI. It is the format most segmentation tools can export
+directly: Cellpose's `masks` output, a scikit-image `label()` result, or an ImageJ ROI
+set rasterized to one label image are all already in this form.
+
+```
+        x →
+   y   0 0 0 0 0 0 0 0
+   ↓   0 1 1 0 0 0 0 0      label 1: four pixels  -> ROI row 0
+       0 1 1 0 0 2 2 0      label 2: six pixels   -> ROI row 1
+       0 0 0 0 2 2 2 0      label 3: three pixels -> ROI row 2
+       0 3 3 3 0 2 0 0
+       0 0 0 0 0 0 0 0
+```
+
+**File and shape.** Saved as `roi_mask.npy` (also found as `roi_masks.npy`,
+`label_mask.npy` or `masks.npy`) in the input directory. The array is indexed
+`mask[y, x]`, rows first, so its shape is `(Ly, Lx)`: the same shape as
+`mean_func.npy` and in the same pixel coordinates as the movie the traces were
+extracted from. Use an integer dtype (`int32` is safe for any realistic ROI count).
+
+**How labels become ROI rows.** The generator collects every distinct positive label,
+sorts them in ascending order, and assigns them to rows `0, 1, 2, …` in that order. Row
+*i* of the mask set is paired with row *i* of `F.npy`, `Fneu.npy`, `dff.h5` and
+`spikes.h5`. When the labels run `1, 2, …, N` with no gaps, this reduces to the short
+rule "label *k* is row *k − 1*". When they do not, the sorted order still applies:
+labels `{3, 7, 12}` become rows `0, 1, 2`, so the traces must be in that same order.
+
+**What the reviewer shows as the ROI's index.** The "Original Index" in the labeler, the
+exported spreadsheet and `roi_manual_labels.npy` is the row number, not the label
+value. If your labels have gaps and you need to map reviewed ROIs back to them, keep the
+sorted label list (`np.unique(mask[mask > 0])`): entry *i* is the label of row *i*. The
+generator records the label as `source_label` in its internal ROI table but does not
+display it.
+
+**One ROI per pixel, no weights.** Each pixel can belong to only one ROI, so a dense mask
+cannot express overlapping ROIs, and every pixel of an ROI counts equally. If your
+segmentation produces overlapping or weighted footprints, as CaImAn's spatial
+components do, supply them as `spatial_components.npz` instead.
+
+**What is ignored.** Zero and negative values are treated as background. A label may
+cover several separate patches of pixels; they form one ROI, and its connectivity
+metric reports how many patches there are.
+
+**What is checked, and what is not.**
+
+| Check | Where |
+|:---|:---|
+| The mask is 2-D | generator and validator, as an error |
+| The number of labels equals the number of trace rows | validator, as an error |
+| Labels run `1..N` without gaps | validator, as a warning (gaps are legal, but are the usual sign of a row-order mismatch) |
+| The mask has the same shape as the mean image | not checked: a mismatch draws outlines in the wrong place |
+| Label *k* really belongs to the trace in its row | not checkable; see [below](#the-one-thing-no-tool-can-check) |
+
+If the counts disagree and validation is skipped, the generator uses only as many ROIs
+as both the mask and the traces have, without warning.
+
+**Making one.** From per-ROI boolean masks, in the same order as your traces:
+
+```python
+import numpy as np
+
+mask = np.zeros((Ly, Lx), dtype=np.int32)
+for row, roi in enumerate(roi_masks):      # roi: boolean (Ly, Lx) array
+    mask[roi & (mask == 0)] = row + 1      # first ROI wins where two overlap
+np.save("roi_mask.npy", mask)
+```
+
+From a label image whose numbering does not match your trace order, pass
+`--row-order` to `scripts/make_standard_inputs.py` with the label of each trace row; it
+renumbers the mask to `1..N` in trace order.
 
 ## Motion offsets
 
