@@ -27,5 +27,7 @@ nav:
       - CLI, Config and Interface: cli-mapping.md
   - The Reviewer:
       - Interface Tour: interface.md
+      - Metric Reference: metrics.md
+      - Export and Downstream Use: export.md
   - Reference:
       - Demo Sessions: demo-sessions.md
