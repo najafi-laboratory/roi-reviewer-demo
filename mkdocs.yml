@@ -21,6 +21,7 @@ nav:
       - Quickstart: quickstart.md
       - Preparing Your Inputs: inputs.md
       - Build Configuration: configuration.md
+      - CLI, Config and Interface: cli-mapping.md
   - The Reviewer:
       - Interface Tour: interface.md
   - Reference:

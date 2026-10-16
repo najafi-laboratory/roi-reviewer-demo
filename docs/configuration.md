@@ -12,8 +12,14 @@ output_dir: outputs/my_session
 roi_index_label: "Original Index"
 target_structure: null
 initialize_labels_from_model_scores: false
+custom_roi_metrics: []
 notes: ""
 ```
+
+Each field maps to one generator flag. [Command line, configuration and
+interface](cli-mapping.md) lists the flag for every field and the part of the
+reviewer it affects. Unrecognized fields are an error, so a misspelling cannot
+pass silently.
 
 | Field | Meaning |
 |---|---|
@@ -22,8 +28,11 @@ notes: ""
 | `input_layout` | `auto`, `suite2p`, `external_rois`, `qc_results` or `manual_qc_results` |
 | `output_dir` | where the reviewer HTML and summary PDF are written |
 | `roi_index_label` | label shown for each ROI's original index |
-| `target_structure` | `soma`, `dendrite` or `null`, selecting which built-in morphology preset is offered |
+| `target_structure` | `all_rois`, `soma`, `dendrite`, `dendrite_relaxed` or `null`: the preset the reviewer's **Target structure** menu opens on |
 | `initialize_labels_from_model_scores` | open with every ROI unlabeled, or pre-labeled from a stored classifier score file when one is present |
+| `custom_roi_metrics` | one path or a list: extra per-ROI numeric metrics embedded in the reviewer |
+| `pdf_name`, `html_name` | output filenames, overriding the defaults |
+| `archive_output`, `archive_name` | write outputs into a per-session subfolder and zip it |
 | `notes` | free text copied into the run log beside the resolved paths |
 
 ## Choosing an input layout
@@ -54,8 +63,8 @@ calibrated on Suite2p's own morphology values, and the external-mask path recomp
 those quantities with definitions that do not share the same scale, so a preset
 calibrated on one can reject well-formed masks scored under the other.
 
-Leave `target_structure: null` for external masks and set thresholds from the
-distribution preview beside each field instead. See [Interface Tour](interface.md) for
+For external masks use `target_structure: all_rois`, which applies no
+thresholds, and set them from the distribution preview beside each field instead. See [Interface Tour](interface.md) for
 what that preview shows.
 
 ## Checking a configuration

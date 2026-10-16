@@ -32,15 +32,35 @@ output_dir: outputs/my_session
 # did not come from Suite2p.
 roi_index_label: "Original Index"
 
-# soma | dendrite | null  -- selects which built-in morphology preset the
-# reviewer offers. Leave null if neither preset suits your preparation; preset
+# all_rois | soma | dendrite | dendrite_relaxed | null -- the morphology preset
+# the "Target structure" menu in the reviewer's metric filters opens on. null
+# takes the value recorded in the session's pipeline parameters, if any. Preset
 # windows were calibrated on Suite2p morphology values and do not transfer to
-# recomputed external-mask metrics.
+# recomputed external-mask metrics; prefer all_rois (no thresholds) for those.
 target_structure: null
 
 # Open with every ROI unlabeled (recommended) or pre-labeled from a stored
-# classifier score file, when one is present.
+# classifier score file (roi_model_scores.h5 / roi_qc_predictions.h5), when one
+# is present.
 initialize_labels_from_model_scores: false
+
+# Extra per-ROI numeric metrics to embed, one path or a list. CSV/TSV/JSON with
+# one value per ROI per column (an optional suite2p_index, roi, roi_index or
+# index column maps rows to original ROI indices), or NPY/NPZ shaped (n_rois,)
+# or (n_rois, n_metrics). They appear under "Uploaded / Custom ROI Metrics" in
+# the filter menu exactly as an in-browser upload would, but are baked in.
+# Relative paths resolve against the repository root.
+custom_roi_metrics: []
+
+# Output filenames. Default: <session>_processing_summary.pdf and
+# <session>_interactive_fov_roi_dff.html.
+pdf_name: null
+html_name: null
+
+# Write outputs into a subfolder named after the session and zip it, so the
+# HTML and its sidecar arrays travel together and keep their relative paths.
+archive_output: false
+archive_name: null
 
 # Free text copied into the run log beside the resolved paths.
 notes: ""

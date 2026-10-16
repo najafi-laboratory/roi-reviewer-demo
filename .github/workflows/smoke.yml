@@ -77,3 +77,29 @@ jobs:
           for cfg in config/*.yaml config/demo/*.yaml; do
             python scripts/build_reviewer.py "$cfg" --dry-run
           done
+
+      - name: Each config field emits its documented flag, and typos fail
+        run: |
+          python - <<'PY'
+          import pathlib, subprocess, sys, tempfile
+          tmp = pathlib.Path(tempfile.mkdtemp())
+          full = tmp / "full.yaml"
+          full.write_text(
+              "name: t\nsession_path: s\noutput_dir: o\ninput_layout: external_rois\n"
+              "roi_index_label: Original Index\ntarget_structure: all_rois\n"
+              "initialize_labels_from_model_scores: true\ncustom_roi_metrics: [a.csv, b.npy]\n"
+              "pdf_name: p.pdf\nhtml_name: h.html\narchive_output: true\narchive_name: z.zip\n")
+          out = subprocess.run([sys.executable, "scripts/build_reviewer.py", str(full), "--dry-run"],
+                               capture_output=True, text=True, check=True).stdout
+          for flag in ("--input-layout", "--roi-index-label", "--target-structure",
+                       "--initialize-labels-from-roi-model-scores", "--pdf-name", "--html-name",
+                       "--archive-output", "--archive-name"):
+              assert flag in out, f"{flag} missing from: {out}"
+          assert out.count("--custom-roi-metrics") == 2, out
+          typo = tmp / "typo.yaml"
+          typo.write_text("name: t\nsession_path: s\noutput_dir: o\ncustom_metrics: a.csv\n")
+          r = subprocess.run([sys.executable, "scripts/build_reviewer.py", str(typo), "--dry-run"],
+                             capture_output=True, text=True)
+          assert r.returncode != 0 and "unrecognized" in (r.stdout + r.stderr), r
+          print("config-to-flag mapping holds; unknown fields rejected")
+          PY

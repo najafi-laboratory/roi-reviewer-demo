@@ -26,14 +26,40 @@ LAYOUTS = {"auto", "suite2p", "external_rois", "qc_results", "manual_qc_results"
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
+# Every key a config may carry. Each one other than name and notes maps to
+# exactly one generator flag in build_command(); see docs/cli-mapping.md.
+KNOWN_KEYS = {
+    "name", "notes", "session_path", "output_dir", "input_layout",
+    "roi_index_label", "target_structure", "initialize_labels_from_model_scores",
+    "custom_roi_metrics", "pdf_name", "html_name", "archive_output", "archive_name",
+}
+TARGET_STRUCTURES = {"all_rois", "soma", "dendrite", "dendrite_relaxed"}
+
+
 def load_config(path: Path) -> dict:
     cfg = yaml.safe_load(path.read_text()) or {}
+    unknown = sorted(set(cfg) - KNOWN_KEYS)
+    if unknown:
+        # A misspelled key would otherwise be dropped without a word and the
+        # reviewer built without the setting the user thought they had made.
+        raise SystemExit(f"{path}: unrecognized field(s): {', '.join(unknown)}; "
+                         f"known fields are {', '.join(sorted(KNOWN_KEYS))}")
     missing = [k for k in ("name", "session_path", "output_dir") if not cfg.get(k)]
     if missing:
         raise SystemExit(f"{path}: missing required field(s): {', '.join(missing)}")
     layout = cfg.get("input_layout", "auto")
     if layout not in LAYOUTS:
         raise SystemExit(f"{path}: input_layout must be one of {sorted(LAYOUTS)}, got {layout!r}")
+    target = cfg.get("target_structure")
+    if target and target not in TARGET_STRUCTURES:
+        raise SystemExit(f"{path}: target_structure must be one of {sorted(TARGET_STRUCTURES)} "
+                         f"or null, got {target!r}")
+    metrics = cfg.get("custom_roi_metrics") or []
+    if isinstance(metrics, str):
+        metrics = [metrics]
+    if not isinstance(metrics, list) or not all(isinstance(m, str) for m in metrics):
+        raise SystemExit(f"{path}: custom_roi_metrics must be a path or a list of paths")
+    cfg["custom_roi_metrics"] = metrics
     return cfg
 
 
@@ -53,6 +79,16 @@ def build_command(cfg: dict, session: Path, output_dir: Path) -> list[str]:
         cmd += ["--target-structure", cfg["target_structure"]]
     if cfg.get("initialize_labels_from_model_scores"):
         cmd += ["--initialize-labels-from-roi-model-scores"]
+    for metric_path in cfg.get("custom_roi_metrics") or []:
+        cmd += ["--custom-roi-metrics", str(resolve(metric_path))]
+    if cfg.get("pdf_name"):
+        cmd += ["--pdf-name", cfg["pdf_name"]]
+    if cfg.get("html_name"):
+        cmd += ["--html-name", cfg["html_name"]]
+    if cfg.get("archive_output"):
+        cmd += ["--archive-output"]
+    if cfg.get("archive_name"):
+        cmd += ["--archive-name", cfg["archive_name"]]
     return cmd
 
 
