@@ -88,7 +88,8 @@ display it.
 **One ROI per pixel, no weights.** Each pixel can belong to only one ROI, so a dense mask
 cannot express overlapping ROIs, and every pixel of an ROI counts equally. If your
 segmentation produces overlapping or weighted footprints, as CaImAn's spatial
-components do, supply them as `spatial_components.npz` instead.
+components do, supply them as `spatial_components.npz` instead; see
+[Overlapping ROIs](#overlapping-rois).
 
 **What is ignored.** Zero and negative values are treated as background. A label may
 cover several separate patches of pixels; they form one ROI, and its connectivity
@@ -121,6 +122,74 @@ np.save("roi_mask.npy", mask)
 From a label image whose numbering does not match your trace order, pass
 `--row-order` to `scripts/make_standard_inputs.py` with the label of each trace row; it
 renumbers the mask to `1..N` in trace order.
+
+### Worked example: the PPC demo session
+
+Download [`roi_mask.npy`](examples/ppc/roi_mask.npy) (512 KB) and
+[`mean_func.npy`](examples/ppc/mean_func.npy) (1 MB) for the posterior parietal cortex
+session shown throughout these docs.
+
+<div class="screenshot" markdown>
+![The PPC session's dense label mask, labels 1 to 225, on its functional mean image, with an 18 by 18 pixel region enlarged to show the stored integer values.](img/ppc-roi-mask.png)
+</div>
+
+| Property | Value |
+|:---|:---|
+| Shape, dtype | `(512, 512)`, `int16` |
+| Labels | `1..225`, gap-free, so label *k* is row *k − 1* |
+| Matches | the 225 rows of the session's `F.npy`, and of the `_dff.npy` and `_oasis_spikes.npy` arrays in its [archived record](demo-sessions.md#try-them-without-installing-anything) |
+| ROI pixels | 12,614 of 262,144; median 56 per ROI |
+
+```python
+import numpy as np
+
+mask = np.load("roi_mask.npy")              # (512, 512) int16
+labels = np.unique(mask[mask > 0])          # array([1, 2, ..., 225])
+roi_17 = mask == 18                         # boolean mask of ROI row 17
+print(roi_17.sum(), "pixels")
+```
+
+The file was made from the session's Suite2p `stat.npy`, which stores each ROI as
+pixel lists with a weight per pixel (`ypix`, `xpix`, `lam`). Suite2p lets ROIs overlap
+(this session ran with `allow_overlap: True`), but a dense mask cannot, so:
+
+* **452 pixels belong to more than one ROI** in `stat.npy`, touching 73 of the 225 ROIs.
+* Each shared pixel was given to the ROI with the **larger weight** at that pixel.
+* As a result 68 ROIs are slightly smaller in the mask than in Suite2p, by 458 pixels in
+  total. No ROI disappeared.
+
+```python
+mask = np.zeros((ops["Ly"], ops["Lx"]), dtype=np.int16)
+best = np.zeros(mask.shape, dtype=np.float32)
+for i, roi in enumerate(stat):
+    y, x, w = roi["ypix"], roi["xpix"], roi["lam"]
+    win = w > best[y, x]                    # this ROI outweighs the current owner
+    mask[y[win], x[win]] = i + 1
+    best[y[win], x[win]] = w[win]
+```
+
+!!! note "This is an illustration; a Suite2p session does not need it"
+    For a Suite2p session the generator reads `stat.npy` directly and keeps every
+    overlapping pixel and weight. Converting to a dense mask only changes the outlines and
+    the morphology metrics recomputed from them (area, compactness, aspect ratio) for the
+    ROIs that shared pixels. The traces do not change, because they come from `F.npy`,
+    which Suite2p extracted from the full, overlapping ROIs.
+
+### Overlapping ROIs
+
+A dense mask stores one label per pixel, so overlaps must be resolved before saving it.
+Choose by what your segmentation produced:
+
+| Your ROIs | Supply | What happens to shared pixels |
+|:---|:---|:---|
+| Suite2p `stat.npy` | the Suite2p layout | kept in every ROI, with their weights |
+| Overlapping or weighted footprints (CaImAn `A`, NMF-style methods) | `spatial_components.npz` | kept in every ROI, with their weights |
+| Non-overlapping labels (Cellpose, watershed, hand-drawn) | `roi_mask.npy` | none exist |
+| Overlapping binary masks you must flatten | `roi_mask.npy` | your choice: highest weight wins (above), first ROI wins, or set to 0 so they belong to no ROI |
+
+Whichever you choose, the traces should come from the same ROIs you are reviewing. If
+they were extracted from overlapping masks, the reviewer still pairs each trace with its
+row correctly; only the drawn outline and the shape metrics reflect the flattened mask.
 
 ## Motion offsets
 
